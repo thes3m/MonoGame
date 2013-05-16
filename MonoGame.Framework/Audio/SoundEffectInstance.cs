@@ -569,6 +569,15 @@ namespace Microsoft.Xna.Framework.Audio
 					if ( _sound.Volume != value )
 					{
 						_sound.Volume = value;
+#if ANDROID
+						if(soundState == SoundState.Playing){
+							float panRatio = (this.Pan + 1.0f) / 2.0f;
+							float volumeTotal = SoundEffect.MasterVolume * value;
+							float volumeLeft = volumeTotal * (1.0f - panRatio);
+							float volumeRight = volumeTotal * panRatio;
+							Sound.SoundPool.SetVolume(_streamId, volumeLeft, volumeRight);
+						}
+#endif
 					}
 				}
 #endif
