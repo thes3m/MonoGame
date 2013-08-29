@@ -77,6 +77,7 @@ namespace Microsoft.Xna.Framework
         private bool _contextWasLost = false;
         private IResumeManager _resumer;
         private bool _isResuming;
+        bool _surfaceDestroyed;
 
         public bool TouchEnabled
         {
@@ -539,12 +540,14 @@ namespace Microsoft.Xna.Framework
         void ISurfaceHolderCallback.SurfaceDestroyed(ISurfaceHolder holder)
         {
             base.SurfaceDestroyed(holder);
+            _surfaceDestroyed = true;
             Android.Util.Log.Debug("MonoGame", "AndroidGameWindow.SurfaceDestroyed");
         }
 
         void ISurfaceHolderCallback.SurfaceCreated(ISurfaceHolder holder)
         {
             base.SurfaceCreated(holder);
+            _surfaceDestroyed = false;
             Android.Util.Log.Debug("MonoGame", "AndroidGameWindow.SurfaceCreated: surfaceFrame = " + holder.SurfaceFrame.ToString());
         }
     }
