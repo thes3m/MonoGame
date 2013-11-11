@@ -115,10 +115,11 @@ namespace Microsoft.Xna.Framework
                     Net.NetworkSession.Exit();
                	    Game.Activity.Finish();
 				    Window.Close();
+					Game.Activity = null;
 				}
             }
-            catch
-            {
+            catch(Exception e){
+				Console.WriteLine("Exception when Eting game:{0}", e);
             }
         }
 

@@ -36,6 +36,9 @@ or conditions. You may have additional consumer rights under your local laws whi
 permitted under your local laws, the contributors exclude the implied warranties of merchantability, fitness for a particular
 purpose and non-infringement.
 */
+using Javax.Microedition.Khronos.Egl;
+
+
 #endregion License
 
 #region Using Statements
@@ -168,8 +171,30 @@ namespace Microsoft.Xna.Framework
 				catch(Exception)
 				{
 					// try again using a more basic mode which hopefully the device will support
-					GraphicsMode = new AndroidGraphicsMode(0, 0, 0, 0, 0, false);
-					base.CreateFrameBuffer();
+					//GraphicsMode = new AndroidGraphicsMode(0, 0, 0, 0, 0, false);
+					try
+					{
+						var win = new AndroidWindow(Holder);
+						EGLConfig[] config = new EGLConfig[1];
+						IEGL10 egl = (IEGL10)Javax.Microedition.Khronos.Egl.EGLContext.EGL;
+						foreach (var c in config){
+							var r = GetAttrib (egl, win.Display, c, EGL11.EglRedSize);
+							var g = GetAttrib (egl, win.Display, c, EGL11.EglGreenSize);
+							var b = GetAttrib (egl, win.Display, c, EGL11.EglBlueSize);
+							var a = GetAttrib (egl, win.Display, c, EGL11.EglAlphaSize);
+							var depth = GetAttrib (egl, win.Display, c, EGL11.EglDepthSize);
+							var stencil = GetAttrib (egl, win.Display, c, EGL11.EglStencilSize);
+							var s = GetAttrib (egl, win.Display, c, EGL11.EglSampleBuffers);
+							var samples = GetAttrib (egl, win.Display, c, EGL11.EglSamples);
+							GraphicsMode = new AndroidGraphicsMode(null, 2,r+g+b+a, depth, stencil, s > 0 ? samples : 0, 2, false);
+							base.CreateFrameBuffer();
+							break;
+						}
+					}
+					catch(Exception e)
+					{
+						throw e;
+					}
 				}
                 All status = GL.CheckFramebufferStatus(All.Framebuffer);
                 Android.Util.Log.Debug("MonoGame", "Framebuffer Status: " + status.ToString());
@@ -210,11 +235,24 @@ namespace Microsoft.Xna.Framework
             MakeCurrent();
 		}
 
+		private int GetAttrib (IEGL10 egl, EGLDisplay display, EGLConfig config, int attrib)
+		{
+			int[] ret = new int [1];
+			try {
+				egl.EglGetConfigAttrib (display, config, attrib, ret);
+			} catch (Exception e) {
+				Log.Warn ("AndroidGraphicsMode", "EglGetConfigAttrib {0} threw exception {1}", attrib, e);
+			}
+			return ret[0];
+		}
+
         protected override void DestroyFrameBuffer()
         {
             // DeviceResetting events
             _game.graphicsDeviceManager.OnDeviceResetting(EventArgs.Empty);
-            _game.GraphicsDevice.OnDeviceResetting();
+			if (_game.GraphicsDevice != null) {
+				_game.GraphicsDevice.OnDeviceResetting ();
+			}
 
             Android.Util.Log.Debug("MonoGame", "AndroidGameWindow.DestroyFrameBuffer");
 
