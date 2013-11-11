@@ -92,7 +92,7 @@ namespace Microsoft.Xna.Framework
         public AndroidGameWindow(Context context, Game game) : base(context)
         {
             _game = game;
-            Initialize();
+			Initialize();
         }		
 						
         private void Initialize()
@@ -163,9 +163,27 @@ namespace Microsoft.Xna.Framework
             Android.Util.Log.Debug("MonoGame", "AndroidGameWindow.CreateFrameBuffer");
 			try
             {
-                GLContextVersion = GLContextVersion.Gles2_0;
+				GLContextVersion = GLContextVersion.Gles2_0;
 				try
 				{
+					int depth = 0;
+					int stencil = 0;
+					switch (this._game.graphicsDeviceManager.PreferredDepthStencilFormat)
+					{
+						case DepthFormat.Depth16: 
+						depth = 16;
+						break;
+						case DepthFormat.Depth24:
+						depth = 24;
+						break;
+						case DepthFormat.Depth24Stencil8: 
+						depth = 24;
+						stencil = 8;
+						break;
+						case DepthFormat.None: break;
+					}
+					Android.Util.Log.Debug("MonoGame", string.Format("Creating Color:Default Depth:{0} Stencil:{1}", depth, stencil));
+					GraphicsMode = new AndroidGraphicsMode(new ColorFormat(8,8,8,8), depth,stencil, 0, 0, false);
 					base.CreateFrameBuffer();
 				}
 				catch(Exception)
@@ -196,6 +214,7 @@ namespace Microsoft.Xna.Framework
 						throw e;
 					}
 				}
+				Android.Util.Log.Debug("MonoGame", "Created format {0}", this.GraphicsContext.GraphicsMode);
                 All status = GL.CheckFramebufferStatus(All.Framebuffer);
                 Android.Util.Log.Debug("MonoGame", "Framebuffer Status: " + status.ToString());
             } 

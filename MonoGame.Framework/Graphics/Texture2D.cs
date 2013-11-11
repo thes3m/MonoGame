@@ -205,12 +205,13 @@ namespace Microsoft.Xna.Framework.Graphics
                     {
                         case SurfaceFormat.RgbPvrtc2Bpp:
                         case SurfaceFormat.RgbaPvrtc2Bpp:
-                            imageSize = (Math.Max(this.width, 8) * Math.Max(this.height, 8) * 2 + 7) / 8;
+                            imageSize = (Math.Max(this.width, 16) * Math.Max(this.height, 8) * 2 + 7) / 8;
                             break;
                         case SurfaceFormat.RgbPvrtc4Bpp:
                         case SurfaceFormat.RgbaPvrtc4Bpp:
-                            imageSize = (Math.Max(this.width, 16) * Math.Max(this.height, 8) * 4 + 7) / 8;
+                            imageSize = (Math.Max(this.width, 8) * Math.Max(this.height, 8) * 4 + 7) / 8;
                             break;
+                        case SurfaceFormat.RgbEtc1:
                         case SurfaceFormat.Dxt1:
                         case SurfaceFormat.Dxt1a:
                         case SurfaceFormat.Dxt3:
@@ -218,7 +219,7 @@ namespace Microsoft.Xna.Framework.Graphics
                             imageSize = ((this.width + 3) / 4) * ((this.height + 3) / 4) * format.Size();
                             break;
                         default:
-                            throw new NotImplementedException();
+                            throw new NotSupportedException();
                     }
 
                     GL.CompressedTexImage2D(TextureTarget.Texture2D, 0, glInternalFormat,
@@ -652,17 +653,35 @@ namespace Microsoft.Xna.Framework.Graphics
                 lock (d3dContext)
                 {
                     // Copy the data from the GPU to the staging texture.
+                    int elementsInRow;
+                    int rows;
                     if (rect.HasValue)
                     {
-                        d3dContext.CopySubresourceRegion(GetTexture(), level, new SharpDX.Direct3D11.ResourceRegion(rect.Value.Left,rect.Value.Top,0, rect.Value.Right, rect.Value.Bottom, 0), stagingTex, 0, 0, 0, 0);
+                        elementsInRow = rect.Value.Width;
+                        rows = rect.Value.Height;
+                        d3dContext.CopySubresourceRegion(GetTexture(), level, new SharpDX.Direct3D11.ResourceRegion(rect.Value.Left, rect.Value.Top, 0, rect.Value.Right, rect.Value.Bottom, 1), stagingTex, 0, 0, 0, 0);
                     }
                     else
+                    {
+                        elementsInRow = width;
+                        rows = height;
                         d3dContext.CopySubresourceRegion(GetTexture(), level, null, stagingTex, 0, 0, 0, 0);
+                    }
 
                     // Copy the data to the array.
                     SharpDX.DataStream stream;
-                    d3dContext.MapSubresource(stagingTex, 0, SharpDX.Direct3D11.MapMode.Read, SharpDX.Direct3D11.MapFlags.None, out stream);
-                    stream.ReadRange(data, startIndex, elementCount);
+                    var databox = d3dContext.MapSubresource(stagingTex, 0, SharpDX.Direct3D11.MapMode.Read, SharpDX.Direct3D11.MapFlags.None, out stream);
+
+                    // Some drivers may add pitch to rows.
+                    // We need to copy each row separatly and skip trailing zeros.
+                    var currentIndex = startIndex;
+                    var elementSize = SharpDX.Utilities.SizeOf<T>();
+                    for (var row = 0; row < rows; row++)
+                    {
+                        stream.ReadRange(data, currentIndex, elementsInRow);
+                        stream.Seek(databox.RowPitch - (elementSize * elementsInRow), SeekOrigin.Current);
+                        currentIndex += elementsInRow;
+                    }
                     stream.Dispose();
                 }
 
@@ -822,7 +841,8 @@ namespace Microsoft.Xna.Framework.Graphics
 
                 BitmapData bitmapData = image.LockBits(new System.Drawing.Rectangle(0, 0, image.Width, image.Height),
                     ImageLockMode.ReadOnly, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
-                if (bitmapData.Stride != image.Width * 4) throw new NotImplementedException();
+                if (bitmapData.Stride != image.Width * 4) 
+                    throw new NotImplementedException();
                 Marshal.Copy(bitmapData.Scan0, data, 0, data.Length);
                 image.UnlockBits(bitmapData);
 
@@ -875,6 +895,9 @@ namespace Microsoft.Xna.Framework.Graphics
             var pixelData = new byte[Width * Height * GraphicsExtensions.Size(Format)];
             GetData(pixelData);
 
+            //We Must convert from BGRA to RGBA
+            ConvertToRGBA(height, width, pixelData);
+
             var waitEvent = new ManualResetEventSlim(false);
             Deployment.Current.Dispatcher.BeginInvoke(() =>
             {
@@ -890,6 +913,26 @@ namespace Microsoft.Xna.Framework.Graphics
 #else
             throw new NotImplementedException();
 #endif
+        }
+
+        //Converts Pixel Data from BGRA to RGBA
+        private static void ConvertToRGBA(int pixelHeight, int pixelWidth, byte[] pixels)
+        {
+            int offset = 0;
+
+            for (int row = 0; row < (uint)pixelHeight; row++)
+            {
+                for (int col = 0; col < (uint)pixelWidth; col++)
+                {
+                    offset = (row * (int)pixelWidth * 4) + (col * 4);
+
+                    byte B = pixels[offset];
+                    byte R = pixels[offset + 2];
+
+                    pixels[offset] = R;
+                    pixels[offset + 2] = B;
+                }
+            }
         }
 
         public void SaveAsPng(Stream stream, int width, int height)
@@ -1056,7 +1099,7 @@ namespace Microsoft.Xna.Framework.Graphics
 
         // This method allows games that use Texture2D.FromStream 
         // to reload their textures after the GL context is lost.
-        internal void Reload(Stream textureStream)
+        public void Reload(Stream textureStream)
         {
 #if OPENGL
             GenerateGLTextureIfRequired();
