@@ -97,6 +97,10 @@ namespace Microsoft.Xna.Framework.GamerServices
             licenseInformation.LicenseChanged += () => isTrialMode = !licenseInformation.IsActive || licenseInformation.IsTrial;
 
             isTrialMode = !licenseInformation.IsActive || licenseInformation.IsTrial;
+#elif WINDOWS_PHONE
+            LicenseInformation license = CurrentApp.LicenseInformation;
+            license.LicenseChanged += () => isTrialMode = !license.IsActive || license.IsTrial;
+            isTrialMode = !license.IsActive || license.IsTrial;
 #endif
         }
 
