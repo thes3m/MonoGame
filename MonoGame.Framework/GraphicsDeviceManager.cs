@@ -1,4 +1,4 @@
-﻿#region License
+#region License
 /*
 Microsoft Public License (Ms-PL)
 MonoGame - Copyright © 2009 The MonoGame Team
@@ -71,11 +71,6 @@ namespace Microsoft.Xna.Framework
         private bool _synchronizedWithVerticalRetrace = true;
         private bool _drawBegun;
         bool disposed;
-
-		private bool _SynchronizedWithVerticalRetrace 
-		{
-			get { return _synchronizedWithVerticalRetrace; }
-		}
 
 #if !WINRT
         private bool _wantFullScreen = false;
@@ -245,15 +240,15 @@ namespace Microsoft.Xna.Framework
 
 			// The graphics device can use a XAML panel or a window
 			// to created the default swapchain target.
-            if (SwapChainPanel != null)
+            if (this.SwapChainBackgroundPanel != null)
             {
                 _graphicsDevice.PresentationParameters.DeviceWindowHandle = IntPtr.Zero;
-                _graphicsDevice.PresentationParameters.SwapChainPanel = SwapChainPanel;
+                _graphicsDevice.PresentationParameters.SwapChainBackgroundPanel = this.SwapChainBackgroundPanel;
             }
             else
             {
                 _graphicsDevice.PresentationParameters.DeviceWindowHandle = _game.Window.Handle;
-                _graphicsDevice.PresentationParameters.SwapChainPanel = null;
+                _graphicsDevice.PresentationParameters.SwapChainBackgroundPanel = null;
             }
 
             // Update the back buffer.
@@ -280,10 +275,19 @@ namespace Microsoft.Xna.Framework
             _graphicsDevice.CreateSizeDependentResources();
             _graphicsDevice.ApplyRenderTargets(null);
 
-            _game.ResizeWindow(false);
+            ((MonoGame.Framework.WinFormsGamePlatform)_game.Platform).ResetWindowBounds();
 
 #elif WINDOWS || LINUX
-            _game.ResizeWindow(false);
+            ((OpenTKGamePlatform)_game.Platform).ResetWindowBounds();
+
+            //Set the swap interval based on if vsync is desired or not.
+            //See GetSwapInterval for more details
+            int swapInterval;
+            if (_synchronizedWithVerticalRetrace)
+                swapInterval = _graphicsDevice.PresentationParameters.PresentationInterval.GetSwapInterval();
+            else
+                swapInterval = 0;
+            _graphicsDevice.Context.SwapInterval = swapInterval;
 #elif MONOMAC
             _graphicsDevice.PresentationParameters.IsFullScreen = _wantFullScreen;
 
@@ -294,7 +298,7 @@ namespace Microsoft.Xna.Framework
 
 #if ANDROID
             // Trigger a change in orientation in case the supported orientations have changed
-            _game.Window.SetOrientation(_game.Window.CurrentOrientation, false);
+            ((AndroidGameWindow)_game.Window).SetOrientation(_game.Window.CurrentOrientation, false);
 #endif
             // Ensure the presentation parameter orientation and buffer size matches the window
             _graphicsDevice.PresentationParameters.DisplayOrientation = _game.Window.CurrentOrientation;
@@ -339,15 +343,15 @@ namespace Microsoft.Xna.Framework
 #elif WINRT
 			// The graphics device can use a XAML panel or a window
 			// to created the default swapchain target.
-            if (SwapChainPanel != null)
+            if (this.SwapChainBackgroundPanel != null)
             {
                 presentationParameters.DeviceWindowHandle = IntPtr.Zero;
-                presentationParameters.SwapChainPanel = SwapChainPanel;
+                presentationParameters.SwapChainBackgroundPanel = this.SwapChainBackgroundPanel;
             }
             else
             {
                 presentationParameters.DeviceWindowHandle = _game.Window.Handle;
-                presentationParameters.SwapChainPanel = null;
+                presentationParameters.SwapChainBackgroundPanel = null;
             }
 #else
             presentationParameters.DeviceWindowHandle = _game.Window.Handle;
@@ -404,7 +408,7 @@ namespace Microsoft.Xna.Framework
 
 #if WINDOWS_STOREAPP
         [CLSCompliant(false)]
-        public SwapChainBackgroundPanel SwapChainPanel { get; set; }
+        public SwapChainBackgroundPanel SwapChainBackgroundPanel { get; set; }
 #endif
 
         public GraphicsProfile GraphicsProfile { get; set; }
@@ -524,20 +528,11 @@ namespace Microsoft.Xna.Framework
         {
             get
             {
-#if LINUX || (WINDOWS && OPENGL)
-                return _game.Platform.VSyncEnabled;
-#else
                 return _synchronizedWithVerticalRetrace;
-#endif
             }
             set
             {
-#if LINUX || (WINDOWS && OPENGL)
-                // TODO: I'm pretty sure this shouldn't occur until ApplyChanges().
-                _game.Platform.VSyncEnabled = value;
-#else
                 _synchronizedWithVerticalRetrace = value;
-#endif
             }
         }
 
@@ -616,7 +611,7 @@ namespace Microsoft.Xna.Framework
             // Set the veiwport so the (potentially) resized client bounds are drawn in the middle of the screen
             _graphicsDevice.Viewport = new Viewport(newClientBounds.X, -newClientBounds.Y, newClientBounds.Width, newClientBounds.Height);
 
-            _game.Window.ClientBounds = newClientBounds;
+            ((AndroidGameWindow)_game.Window).ChangeClientBounds(newClientBounds);
 
             // Touch panel needs latest buffer size for scaling
             TouchPanel.DisplayWidth = newClientBounds.Width;

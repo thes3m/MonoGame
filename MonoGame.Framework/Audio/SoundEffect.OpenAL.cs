@@ -3,12 +3,7 @@
 // file 'LICENSE.txt', which is part of this source code package.
 ﻿
 using System;
-using System.Collections.Generic;
 using System.IO;
-
-using Microsoft.Xna;
-using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Audio;
 
 #if MONOMAC
 using MonoMac.AudioToolbox;
@@ -51,7 +46,7 @@ namespace Microsoft.Xna.Framework.Audio
 
         private void PlatformLoadAudioStream(Stream s)
         {
-#if WINDOWS || LINUX
+#if WINDOWS || LINUX || ANGLE
             
             ALFormat format;
             int size;
@@ -107,7 +102,7 @@ namespace Microsoft.Xna.Framework.Audio
 			Rate = (float)sampleRate;
             Size = (int)buffer.Length;
 
-#if WINDOWS || LINUX
+#if WINDOWS || LINUX || ANGLE
 
             _data = buffer;
             Format = (channels == AudioChannels.Stereo) ? ALFormat.Stereo16 : ALFormat.Mono16;
@@ -210,6 +205,13 @@ namespace Microsoft.Xna.Framework.Audio
         }
 
         #endregion
+
+        internal static void PlatformShutdown()
+        {
+#if OPENAL
+            OpenALSoundController.DestroyInstance();
+#endif
+        }
     }
 }
 

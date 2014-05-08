@@ -6,16 +6,16 @@ using System;
 using System.IO;
 using System.Runtime.InteropServices;
 
-#if WINRT
 #if WINDOWS_PHONE
 using System.Threading;
 using System.Windows;
 using System.Windows.Media.Imaging;
-#else
+#endif
+
+#if WINDOWS_STOREAPP
 using Windows.Graphics.Imaging;
 using Windows.Storage.Streams;
 using System.Threading.Tasks;
-#endif
 #endif
 
 namespace Microsoft.Xna.Framework.Graphics
@@ -159,15 +159,12 @@ namespace Microsoft.Xna.Framework.Graphics
         {
 #if WINDOWS_PHONE
             WriteableBitmap bitmap = null;
-            var waitEvent = new ManualResetEventSlim(false);
-            Deployment.Current.Dispatcher.BeginInvoke(() =>
+            Threading.BlockOnUIThread(() =>
             {
                     BitmapImage bitmapImage = new BitmapImage();
                     bitmapImage.SetSource(stream);
                     bitmap = new WriteableBitmap(bitmapImage);
-                    waitEvent.Set();
             });
-            waitEvent.Wait();
 
             // Convert from ARGB to ABGR 
             ConvertToABGR(bitmap.PixelHeight, bitmap.PixelWidth, bitmap.Pixels);
@@ -203,7 +200,7 @@ namespace Microsoft.Xna.Framework.Graphics
 #endif
 #if WINDOWS_PHONE
 
-            var pixelData = new byte[Width * Height * GraphicsExtensions.Size(Format)];
+            var pixelData = new byte[Width * Height * GraphicsExtensions.GetSize(Format)];
             GetData(pixelData);
 
             //We Must convert from BGRA to RGBA
@@ -260,7 +257,7 @@ namespace Microsoft.Xna.Framework.Graphics
 
         private void SaveAsImage(Guid encoderId, Stream stream, int width, int height)
         {
-            var pixelData = new byte[Width * Height * GraphicsExtensions.Size(Format)];
+            var pixelData = new byte[Width * Height * GraphicsExtensions.GetSize(Format)];
             GetData(pixelData);
 
             // TODO: We need to convert from Format to R8G8B8A8!

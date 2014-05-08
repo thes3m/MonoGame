@@ -94,7 +94,7 @@ namespace Microsoft.Xna.Framework
             return new iOSGamePlatform(game);
 #elif MONOMAC
             return new MacGamePlatform(game);
-#elif (WINDOWS && OPENGL) || LINUX
+#elif (WINDOWS && OPENGL) || LINUX || ANGLE
             return new OpenTKGamePlatform(game);
 #elif ANDROID
             return new AndroidGamePlatform(game);
@@ -186,20 +186,7 @@ namespace Microsoft.Xna.Framework
         }
 #endif
 
-#if ANDROID
-        private AndroidGameWindow _window;
-        public AndroidGameWindow Window
-        {
-            get { return _window; }
-            protected set
-            {
-                if (_window == null)
-                    TouchPanel.PrimaryWindow = value;
-
-                _window = value;
-            }
-        }
-#elif PSM
+#if PSM
         private PSSGameWindow _window;
         public PSSGameWindow Window
         {
@@ -231,17 +218,7 @@ namespace Microsoft.Xna.Framework
             }
         }
 #endif
-  
-        public virtual bool VSyncEnabled
-        {
-            get
-            {
-                throw new NotImplementedException();
-            }
-            set {
-            }
-        }
-        
+
         #endregion
 
         #region Events
@@ -288,9 +265,6 @@ namespace Microsoft.Xna.Framework
             {
                 var graphicsDeviceManager = Game.Services.GetService(typeof(IGraphicsDeviceManager)) as IGraphicsDeviceManager;			   
                 graphicsDeviceManager.CreateDevice();
-#if ANDROID
-                Window.TouchEnabled = true;
-#endif
             }
         }
 
