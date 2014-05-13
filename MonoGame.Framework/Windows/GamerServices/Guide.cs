@@ -480,6 +480,11 @@ namespace Microsoft.Xna.Framework.GamerServices
         {
 #if !DIRECTX
             MonoGameGamerServicesHelper.Initialise(game);
+#elif WINDOWS_PHONE
+            game.Activated += (e, a) => {
+                Microsoft.Phone.Marketplace.LicenseInformation licenseInformation = new Microsoft.Phone.Marketplace.LicenseInformation();
+                isTrialMode = licenseInformation == null ? false : licenseInformation.IsTrial();
+            };
 #endif
         }
     }
