@@ -4,6 +4,7 @@
 
 using System.ComponentModel;
 using Microsoft.Xna.Framework.Content.Pipeline;
+using Microsoft.Xna.Framework.Content.Pipeline.Builder.Convertors;
 
 namespace MonoGame.Tools.Pipeline
 {
@@ -28,6 +29,8 @@ namespace MonoGame.Tools.Pipeline
 
         #region IProjectItem
 
+        [Category("Common")]
+        [Description("The file name of this item.")]
         public string Name 
         { 
             get
@@ -36,6 +39,8 @@ namespace MonoGame.Tools.Pipeline
             }
         }
 
+        [Category("Common")]
+        [Description("The folder where this item is located.")]
         public string Location
         {
             get
@@ -49,6 +54,9 @@ namespace MonoGame.Tools.Pipeline
 
         #endregion
 
+        [Category("Settings")]
+        [DisplayName("Build Action")]
+        [Description("The way to process this content item.")]
         public BuildAction BuildAction
         {
             get { return _buildAction; }
@@ -64,6 +72,8 @@ namespace MonoGame.Tools.Pipeline
             }
         }
 
+        [Category("Settings")]
+        [Description("The importer used to load the content file.")]
         [TypeConverter(typeof(ImporterConverter))]
         public ImporterTypeDescription Importer
         {
@@ -89,6 +99,8 @@ namespace MonoGame.Tools.Pipeline
             }
         }
 
+        [Category("Settings")]
+        [Description("The processor used to transform the content for runtime use.")]
         [TypeConverter(typeof(ProcessorConverter))]
         public ProcessorTypeDescription Processor
         {
@@ -160,7 +172,7 @@ namespace MonoGame.Tools.Pipeline
                         {
                             var srcType = src.GetType();
 
-                            var converter = TypeDescriptor.GetConverter(p.Type);
+                            var converter = PipelineTypes.FindConverter(p.Type);
 
                             // Should we throw an exception here?
                             // This property will actually not be editable in the property grid
