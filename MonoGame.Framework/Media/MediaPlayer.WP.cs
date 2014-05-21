@@ -93,14 +93,14 @@ namespace Microsoft.Xna.Framework.Media
             if(_mediaElement.Dispatcher.CheckAccess()) {
                 pos = _mediaElement.Position;
             }
-            else {
-                Deployment.Current.Dispatcher.BeginInvoke(() =>
-                {
-                    pos = _mediaElement.Position;
-                    Wait.Set();
-                });
-                Wait.WaitOne();
-            }
+            //else {
+            //    Deployment.Current.Dispatcher.BeginInvoke(() =>
+            //    {
+            //        pos = _mediaElement.Position;
+            //        Wait.Set();
+            //    });
+            //    Wait.WaitOne();
+            //}
             return (pos);
         }
 
