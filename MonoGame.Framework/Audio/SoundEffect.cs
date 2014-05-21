@@ -61,6 +61,33 @@ namespace Microsoft.Xna.Framework.Audio
 
         #region Additional SoundEffect/SoundEffectInstance Creation Methods
 
+        /// Updates sound effect internal data with new one
+        /// <param name="buffer">Buffer containing PCM wave data.</param>
+        /// <param name="offset">Offset, in bytes, to the starting position of the audio data.</param>
+        /// <param name="count">Amount, in bytes, of audio data.</param>
+        /// <param name="sampleRate">Sample rate, in Hertz (Hz)</param>
+        /// <param name="channels">Number of channels (mono or stereo).</param>
+        /// <param name="loopStart">The position, in samples, where the audio should begin looping.</param>
+        /// <param name="loopLength">The duration, in samples, that audio should loop over.</param>
+        /// <remarks>Use SoundEffect.GetSampleDuration() to convert time to samples.</remarks>
+        internal void UpdateInternalData(byte[] buffer, int offset, int count, int sampleRate, AudioChannels channels, int loopStart, int loopLength) 
+        {
+            _duration = GetSampleDuration(count, sampleRate, channels);
+
+            PlatformInitialize(buffer, offset, count, sampleRate, channels, loopStart, loopLength);
+        }
+
+        /// <param name="buffer">Buffer containing PCM wave data.</param>
+        /// <param name="sampleRate">Sample rate, in Hertz (Hz)</param>
+        /// <param name="channels">Number of channels (mono or stereo).</param>
+        internal void UpdateInternalData(byte[] buffer, int sampleRate, AudioChannels channels) 
+        {
+            _duration = GetSampleDuration(buffer.Length, sampleRate, channels);
+
+            PlatformInitialize(buffer, sampleRate, channels);
+        }
+
+
         /// <summary>
         /// Creates a new SoundEffectInstance for this SoundEffect.
         /// </summary>

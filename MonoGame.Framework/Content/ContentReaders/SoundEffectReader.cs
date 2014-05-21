@@ -85,7 +85,13 @@ namespace Microsoft.Xna.Framework.Content
             //  WORD  wBitsPerSample;   // byte[14] +2
             //  WORD  cbSize;           // byte[16] +2
             //} WAVEFORMATEX;
-            
+
+            //Check weather the existing instance is the same as current and is not disposed.
+            if(existingInstance != null && !existingInstance.IsDisposed && input.AssetName == existingInstance.Name) 
+            {
+                return existingInstance;
+            }
+
 			byte[] header = input.ReadBytes(input.ReadInt32());
 			byte[] data = input.ReadBytes(input.ReadInt32());
 			int loopStart = input.ReadInt32();
@@ -109,11 +115,20 @@ namespace Microsoft.Xna.Framework.Content
             else
                 throw new NotSupportedException("Unsupported wave format!");
 
-            return new SoundEffect(data, 0, count, sampleRate, (AudioChannels)channels, loopStart, loopLength)
+            if(existingInstance == null) 
             {
-                _format = waveFormat,
-                Name = input.AssetName,
-            };
+                return new SoundEffect(data, 0, count, sampleRate, (AudioChannels)channels, loopStart, loopLength) {
+                    _format = waveFormat,
+                    Name = input.AssetName,
+                };
+            }
+            else
+            {
+                existingInstance.UpdateInternalData(data, 0, count, sampleRate, (AudioChannels)channels, loopStart, loopLength);
+                existingInstance._format = waveFormat;
+                existingInstance.Name = input.AssetName;
+                return existingInstance;
+            }
 #else
             if(loopStart == loopLength) 
             {
@@ -147,11 +162,20 @@ namespace Microsoft.Xna.Framework.Content
             );
 
             var channels = (header[2] == 2) ? AudioChannels.Stereo : AudioChannels.Mono;
-            return new SoundEffect(data, sampleRate, channels)
-                {
-                    Name = input.AssetName
-                };
+            if(existingInstance == null) 
+            {
+                return new SoundEffect(data, sampleRate, channels)
+                    {
+                        Name = input.AssetName
+                    };
+            }
+            else
+            {
+                existingInstance.UpdateInternalData(data, sampleRate,channels);
+                existingInstance.Name = input.AssetName;
+                return existingInstance;
+            }
 #endif
-		}
+        }
 	}
 }
