@@ -136,8 +136,6 @@ namespace Microsoft.Xna.Framework
 
 #if WINDOWS_STOREAPP
             Platform.ViewStateChanged += Platform_ApplicationViewChanged;
-#elif WINDOWS_PHONE
-            Microsoft.Xna.Framework.GamerServices.Guide.Initialise(this);
 #endif
         }
 
